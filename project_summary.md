@@ -1,5 +1,4 @@
-# Project Title
-A NOISE
+# A NOISE
 
 ## Author
 - CJ Gammon https://github.com/cjgammon
