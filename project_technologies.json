@@ -4,9 +4,10 @@
             "google plus"
         ],
         "platforms": [
-            "webgl"
+            "web"
         ],
         "toolkits": [
+            "webgl",
             "threejs",
             "nodejs"
         ],

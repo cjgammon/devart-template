@@ -1,5 +1,5 @@
 # Prototyping
-Began prototyping in WebGL with Three.js. I'm using an orthographic camera to keep things 2D.
+I began prototyping in WebGL with Three.js. I'm using an orthographic camera to keep things 2D.
 
 ## Circles
 ![Circles](../project_images/prototype_dashedline.png?raw=true "Circles")
