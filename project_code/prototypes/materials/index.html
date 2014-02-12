@@ -7,21 +7,36 @@
 			body{
 				margin: 0;
 			}
+
+			#video, #videoCanvas{
+				display: none;
+			}
 		</style>
 	</head>
 	<body>
 		
 		<canvas id="canvas"></canvas>
 
+		<canvas id="videoCanvas" width="260" height="200"></canvas>
+		<video id="video" width="260" height="200" autoplay></video>
+
 		<script src="three.js"></script>
 		<script>
+		navigator.getUserMedia  = navigator.getUserMedia ||
+                          navigator.webkitGetUserMedia ||
+                          navigator.mozGetUserMedia ||
+                          navigator.msGetUserMedia;
+
 			var width = window.innerWidth,
 				height = window.innerHeight,
 				near = 0,
 				far = 1000,
 				camera,
 				scene,
-				renderer;
+				renderer,
+				texture,
+				videoCanvas = document.getElementById('videoCanvas'),
+				videoCtx = videoCanvas.getContext('2d');
 
 			camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, near, far );
 			camera.position.z = 1000;
@@ -32,33 +47,90 @@
 
 			scene = new THREE.Scene();
 
-			/*
-			video = document.getElementById( 'video' );
-
-			texture = new THREE.Texture( video );
-			texture.minFilter = THREE.LinearFilter;
-			texture.magFilter = THREE.LinearFilter;
-			texture.format = THREE.RGBFormat;
-			texture.generateMipmaps = false;
-			*/
-
-			cube = new THREE.Mesh(new THREE.CubeGeometry(100, 100, 100), new THREE.MeshBasicMaterial({color: 0xff0000}));
-			scene.add(cube);
+			var light = new THREE.DirectionalLight( 0xffffff );
+			light.position.set( 0.5, 1, 1 ).normalize();
+			scene.add( light );
 
 			c = circle(100, 50, 4, true);
 			scene.add(c);
 
-			renderer.render(scene, camera);
+			c = circle(120, 80, 2, true);
+			scene.add(c);
+
+			c = circle(130, 80, 1, false);
+			scene.add(c);
+
+			c = circle(80, 80, 6, false);
+			scene.add(c);
+
+			console.log('usermedia?', navigator.getUserMedia);
+			if (navigator.getUserMedia) {
+  				navigator.getUserMedia({audio: true, video: true}, handle_userMedia_SUCCESS, handle_userMedia_ERROR);
+			} else {
+				console.log('not enabled');
+			}
+
+			render();
+
+			function render() {
+
+				if (typeof(texture) !== 'undefined') {
+					drawVideo();
+                    texture.needsUpdate = true;
+                }
+
+				renderer.render(scene, camera);
+				requestAnimationFrame(render);
+			}
+
+			function drawVideo() {
+				videoCtx.clearRect(0, 0, 130, 100);
+
+				videoCtx.save();
+
+				videoCtx.beginPath();
+     			videoCtx.arc(videoCanvas.width / 2, videoCanvas.height / 2, videoCanvas.height / 2, 0, 2 * Math.PI, false);
+     			videoCtx.fill();
+     			videoCtx.closePath();
+     			videoCtx.clip();
+
+     			videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+     			videoCtx.restore();
+			}
+
+			function handle_userMedia_SUCCESS(stream) {
+				console.log('success');
+
+				video = document.getElementById('video');
+    			video.src = window.URL.createObjectURL(stream);
+
+
+   				texture = new THREE.Texture(videoCanvas);
+	        	texture.minFilter = THREE.LinearFilter;
+	        	texture.magFilter = THREE.LinearFilter;
+	        	texture.format = THREE.RGBFormat;
+	        	texture.generateMipmaps = false;
+
+				geo = new THREE.PlaneGeometry(133, 100, 1, 1);
+				mat = new THREE.MeshLambertMaterial({map: texture});
+    			cube = new THREE.Mesh(geo, mat);
+				scene.add(cube);
+			}
+
+			function handle_userMedia_ERROR(e) {
+				console.log('error', e);
+			}
 
 			function circle(r, segments, stroke, dashed) {
-				var segmentCount = segments,
-    				radius = r,
+    			var radius = r,
     				geometry = new THREE.Geometry(),
     				material;
 
-				for (var i = 0; i <= segmentCount; i++) {
-    				var theta = (i / segmentCount) * Math.PI * 2;
-   					geometry.vertices.push(new THREE.Vector3(Math.cos(theta) * radius, Math.sin(theta) * radius, 0));
+				for (var i = 0; i <= segments; i++) {
+    				var theta = (i / segments) * Math.PI * 2,
+    					vector = new THREE.Vector3(Math.cos(theta) * radius, Math.sin(theta) * radius, 0);
+
+   					geometry.vertices.push(vector);
 				}
 
     			if (dashed !== true) {
