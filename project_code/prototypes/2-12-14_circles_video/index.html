@@ -41,7 +41,7 @@
 			camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, near, far );
 			camera.position.z = 1000;
 
-			renderer = new THREE.WebGLRenderer( {canvas: document.getElementById('canvas'),  antialias: false } );
+			renderer = new THREE.WebGLRenderer( {canvas: document.getElementById('canvas'),  antialias: true } );
 			renderer.setSize( width, height );
 			renderer.setClearColor(0x000000);
 
