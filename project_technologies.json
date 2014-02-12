@@ -1,13 +1,18 @@
 {
     "technologies": {
         "apis": [
-            "Google Plus"
+            "google plus"
         ],
         "platforms": [
-            "WebGL"
+            "webgl"
         ],
         "toolkits": [
-            "Three.js"
+            "threejs",
+            "nodejs"
+        ],
+        "languages": [
+            "javascript",
+            "glsl"
         ]
     },
     "themes": [
