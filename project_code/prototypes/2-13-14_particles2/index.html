@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>test</title>
+		<style>
+			body{
+				margin: 0;
+			}
+
+			#video, #videoCanvas{
+				display: none;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<canvas id="canvas"></canvas>
+
+		<script type="x-shader/x-vertex" id="vertexshader">
+			attribute float size;
+			attribute vec3 ca;
+			attribute float alpha;
+
+			varying vec3 vColor;
+			varying float vAlpha;
+
+			void main() {
+				vColor = ca;
+				vAlpha = alpha;
+
+				vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+
+				gl_PointSize = size * (300.0 / length( mvPosition.xyz));
+				gl_Position = projectionMatrix * mvPosition;
+			}
+		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentshader">
+			uniform vec3 color;
+			uniform sampler2D texture;
+
+			varying vec3 vColor;
+			varying float vAlpha;
+
+			void main() {
+				gl_FragColor = vec4(color * vColor, vAlpha);
+				gl_FragColor = gl_FragColor * texture2D(texture, gl_PointCoord);
+			}
+		</script>
+
+		<script src="three.js"></script>
+
+		<script>
+var width = window.innerWidth,
+	height = window.innerHeight,
+	near = 0,
+	far = 1000,
+	camera,
+	scene,
+	renderer;
+
+camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, near, far);
+camera.position.z = 1000;
+
+renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+renderer.setSize(width, height);
+renderer.setClearColor(0x000000);
+
+scene = new THREE.Scene();
+
+function getCircleTexture(filled) {
+	var canvas,
+		ctx;
+
+	canvas = document.createElement('canvas'),
+	canvas.width = 50;
+	canvas.height = 50;
+
+	ctx = canvas.getContext('2d');
+
+	ctx.beginPath();
+	ctx.arc(25, 25, 20, 0, 2 * Math.PI, false);	
+	ctx.lineWidth = 3;
+	ctx.fillStyle = 'white';
+	ctx.strokeStyle = 'white';
+	if (filled !== false) {
+		ctx.fill();
+	}
+	ctx.stroke();
+	ctx.closePath();	
+
+	texture = new THREE.Texture(canvas);
+	texture.minFilter = THREE.LinearFilter;
+	texture.magFilter = THREE.LinearFilter;
+	texture.format = THREE.RGBFormat;
+	texture.generateMipmaps = false;
+	texture.needsUpdate = true;
+
+	return texture;
+}
+
+var PS = function (filled) {
+	var count = 300,
+		particles = new THREE.Geometry(),
+		particle,
+		p,
+		attributes,
+		uniforms,
+		particleSystem,
+		shaderMaterial;
+
+	attributes = {
+		size: {	type: 'f', value: [] },
+		ca:   {	type: 'c', value: [] },
+		alpha:   {type: 'f', value: []}
+	};
+
+	uniforms = {
+		amplitude: { type: "f", value: 1.0 },
+		color:     { type: "c", value: new THREE.Color( 0xffffff ) },
+		texture:   { type: "t", value: getCircleTexture(filled) },
+	};
+
+	uniforms.texture.value.wrapS = uniforms.texture.value.wrapT = THREE.RepeatWrapping;
+
+	shaderMaterial = new THREE.ShaderMaterial( {
+		uniforms: 		uniforms,
+		attributes:     attributes,
+		vertexShader:   document.getElementById('vertexshader').textContent,
+		fragmentShader: document.getElementById('fragmentshader').textContent,
+		transparent:	true
+	});
+
+	for (p = 0; p < count; p += 1) {
+
+	 	particle = new THREE.Vector3(0, 0, 0);
+		particle.velocity = new THREE.Vector3(Math.random() * 10, 0, 0); 
+		particles.vertices.push(particle);
+
+		attributes.size.value[ p ] = Math.random() * 100;
+		attributes.ca.value[ p ] = new THREE.Color( 0xffffff );
+		attributes.alpha.value[ p ] = 0;
+	}
+	
+	particleSystem = new THREE.ParticleSystem(particles, shaderMaterial);
+	particleSystem.sortParticles = true;
+
+	this.update = function () {
+		var pCount = count,
+			particle,
+			dist,
+			perimeter = 400;
+
+		while (pCount--) {
+
+    		particle = particles.vertices[pCount];
+    		dist = Math.sqrt(particle.x * particle.x + particle.y * particle.y);
+
+			if (dist > perimeter) {
+    			particle.y = 0;
+    			particle.x = 0;
+    			attributes.alpha.value[pCount] = Math.random();
+    			particle.velocity = new THREE.Vector3(-1 + Math.random() * 2, 
+    				-1 + Math.random() * 2, 
+    				Math.random() * 1000); 
+
+    		} else {
+    			attributes.alpha.value[pCount] *= 1 - (dist / perimeter) / 10;
+    		}
+		
+
+    		particle.x += particle.velocity.x;
+    		particle.y += particle.velocity.y;
+  		}
+
+		particleSystem.geometry.__dirtyVertices = true;
+	}
+
+	this.system = particleSystem;
+}
+
+
+var p1 = new PS(true),
+	p2 = new PS(false);
+
+scene.add(p1.system);
+scene.add(p2.system);
+
+render();
+
+function render() {
+	p1.update();
+	p2.update();
+
+	renderer.render(scene, camera);
+	requestAnimationFrame(render);
+}
+
+		</script>
+	</body>
+</html>
