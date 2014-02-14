@@ -44,8 +44,17 @@
 			varying float vAlpha;
 
 			void main() {
-				gl_FragColor = vec4(color * vColor, vAlpha);
-				gl_FragColor = gl_FragColor * texture2D(texture, gl_PointCoord);
+				vec4 t = texture2D(texture, gl_PointCoord);
+				float a;
+
+				if (t.x > 0.0) {
+					a = vAlpha;
+				} else {
+					a = 0.0;
+				}
+
+				gl_FragColor = vec4(color * vColor, a);
+				gl_FragColor = gl_FragColor * vec4(t.x, t.y, t.z, a);
 			}
 		</script>
 
